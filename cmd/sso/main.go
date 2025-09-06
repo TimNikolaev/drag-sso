@@ -3,6 +3,8 @@ package main
 import (
 	"log/slog"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/TimNikolaev/drag-sso/internal/app"
 	"github.com/TimNikolaev/drag-sso/internal/config"
@@ -27,7 +29,20 @@ func main() {
 	application := app.New(log, cfg.GRPC.Port, cfg.TokenTTL)
 
 	// Run app's gRPC-server
-	application.GRPCServer.MustRun()
+	go application.GRPCServer.MustRun()
+
+	// Realization Graceful shutdown
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
+	signal := <-quit
+
+	log.Info("graceful stopping", slog.String("signal", signal.String()))
+
+	application.GRPCServer.Stop()
+
+	log.Info("graceful stopped")
+
 }
 
 func setupLogger(env string) *slog.Logger {
