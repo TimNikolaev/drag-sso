@@ -10,8 +10,8 @@ import (
 )
 
 type Auth interface {
-	SignUpNewUser(ctx context.Context, email string, password string) (uint64, error)
-	SignIn(ctx context.Context, email string, password string) (string, error)
+	SignUpNewUser(ctx context.Context, email string, pass string) (uint64, error)
+	SignIn(ctx context.Context, email string, pass string) (string, error)
 }
 
 type serverAPI struct {
@@ -34,6 +34,7 @@ func (s *serverAPI) SignUp(ctx context.Context, req *ssov1.SignUpRequest) (*ssov
 
 	userID, err := s.auth.SignUpNewUser(ctx, req.GetEmail(), req.GetPassword())
 	if err != nil {
+		//TODO:
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 
@@ -47,6 +48,7 @@ func (s *serverAPI) SignIn(ctx context.Context, req *ssov1.SignInRequest) (*ssov
 
 	token, err := s.auth.SignIn(ctx, req.GetEmail(), req.GetPassword())
 	if err != nil {
+		//TODO
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 
