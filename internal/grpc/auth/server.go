@@ -11,7 +11,7 @@ import (
 
 type Auth interface {
 	SignUpNewUser(ctx context.Context, email string, pass string) (uint64, error)
-	SignIn(ctx context.Context, email string, pass string) (string, error)
+	SignIn(ctx context.Context, email string, pass string, appID int32) (string, error)
 }
 
 type serverAPI struct {
@@ -46,7 +46,7 @@ func (s *serverAPI) SignIn(ctx context.Context, req *ssov1.SignInRequest) (*ssov
 		return nil, err
 	}
 
-	token, err := s.auth.SignIn(ctx, req.GetEmail(), req.GetPassword())
+	token, err := s.auth.SignIn(ctx, req.GetEmail(), req.GetPassword(), req.GetAppId())
 	if err != nil {
 		//TODO
 		return nil, status.Error(codes.Internal, "internal error")
