@@ -51,6 +51,8 @@ func New(
 
 var (
 	ErrInvalidCredentials = errors.New("invalid credentials")
+	ErrInvalidAppID       = errors.New("invalid app id")
+	ErrUserExists         = errors.New("user already exists")
 )
 
 func (a *Auth) SignUpNewUser(ctx context.Context, email string, pass string) (uint64, error) {
@@ -62,14 +64,20 @@ func (a *Auth) SignUpNewUser(ctx context.Context, email string, pass string) (ui
 
 	passHash, err := bcrypt.GenerateFromPassword([]byte(pass), bcrypt.DefaultCost)
 	if err != nil {
-		log.Error("failed to hashing password" /**/)
+		log.Error("failed to hashing password")
 
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
 
 	id, err := a.userCreator.CreateUser(ctx, email, passHash)
 	if err != nil {
-		log.Error("failed to create user" /**/)
+		if errors.Is(err, repository.ErrUserExists) {
+			log.Warn("user already exists")
+
+			return 0, fmt.Errorf("%s: %w", op, ErrUserExists)
+		}
+
+		log.Error("failed to create user")
 
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
@@ -90,24 +98,32 @@ func (a *Auth) SignIn(ctx context.Context, email string, pass string, appID int3
 	user, err := a.userProvider.GetUser(ctx, email)
 	if err != nil {
 		if errors.Is(err, repository.ErrUserNotFound) {
-			log.Error("user not found" /**/)
+			log.Warn("user not found")
 
 			return "", fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
 		}
 
-		log.Error("failed to get user" /**/)
+		log.Error("failed to get user")
 
 		return "", fmt.Errorf("%s: %w", op, err)
 	}
 
 	if err := bcrypt.CompareHashAndPassword(user.PassHash, []byte(pass)); err != nil {
-		log.Error("invalid credentials" /**/)
+		log.Error("invalid credentials")
 
 		return "", fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
 	}
 
 	app, err := a.appProvider.GetApp(ctx, appID)
 	if err != nil {
+		if errors.Is(err, repository.ErrAppNotFound) {
+			log.Warn("app not found")
+
+			return "", fmt.Errorf("%s: %w", op, ErrInvalidAppID)
+		}
+
+		log.Error("failed to get app")
+
 		return "", fmt.Errorf("%s: %w", op, err)
 	}
 
@@ -115,7 +131,7 @@ func (a *Auth) SignIn(ctx context.Context, email string, pass string, appID int3
 
 	token, err := jwt.NewToken(user, app, a.tokenTTL)
 	if err != nil {
-		log.Error("failed to generate token" /**/)
+		log.Error("failed to generate token")
 
 		return "", fmt.Errorf("%s: %w", op, err)
 	}
