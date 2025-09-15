@@ -1,12 +1,14 @@
 package main
 
 import (
+	"errors"
 	"flag"
+	"fmt"
 
 	"github.com/TimNikolaev/drag-sso/internal/config"
 	postgres_repo "github.com/TimNikolaev/drag-sso/internal/repository/postgres"
 	"github.com/golang-migrate/migrate/v4"
-  "github.com/golang-migrate/migrate/v4/database/postgres"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/lib/pq"
 )
@@ -16,7 +18,8 @@ func main() {
 
 	flag.StringVar(&migrationsPath, "migrations-path", "", "path to migrations files")
 	flag.StringVar(&migrationsDB, "migrations-db", "", "db name for migrations")
-	flag.Parse()
+
+	cfg := config.MustLoad()
 
 	if migrationsPath == "" {
 		panic("migrations-path is required")
@@ -26,34 +29,32 @@ func main() {
 		panic("migrations-db is required")
 	}
 
-	cfg := config.MustLoad()
-
 	db := postgres_repo.MustConnect(cfg.DSN)
 
-	driver, err := postgres.WithInstance(db, &postgres.Config{})
+	driver, err := postgres.WithInstance(db.DB, &postgres.Config{})
 	if err != nil {
 		panic(err)
 	}
 
-	 m, err := migrate.NewWithDatabaseInstance(
-        "file://"+migrationsPath,
-        migrationsDB,         
-        driver,  
-    )
-    if err != nil {
-        panic(err)
-    }
+	m, err := migrate.NewWithDatabaseInstance(
+		"file://"+migrationsPath,
+		migrationsDB,
+		driver,
+	)
+	if err != nil {
+		panic(err)
+	}
 
-		if err := m.Up(); err != nil{
-			if errors.Is(err, migrate.ErrNotChange){
-				fmt.Println("no migrations to apply")
+	if err := m.Up(); err != nil {
+		if errors.Is(err, migrate.ErrNoChange) {
+			fmt.Println("no migrations to apply")
 
-				return 
-			}
-
-			panic(err)
+			return
 		}
 
-		fmt.Println("migrations applied successfully")
+		panic(err)
+	}
+
+	fmt.Println("migrations applied successfully")
 
 }
