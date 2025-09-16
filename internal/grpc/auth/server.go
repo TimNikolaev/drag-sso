@@ -48,7 +48,7 @@ func (s *serverAPI) SignIn(ctx context.Context, req *ssov1.SignInRequest) (*ssov
 
 	token, err := s.auth.SignIn(ctx, req.GetEmail(), req.GetPassword(), req.GetAppId())
 	if err != nil {
-		//TODO
+		//TODO:
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 
