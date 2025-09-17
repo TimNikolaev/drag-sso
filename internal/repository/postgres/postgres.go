@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 
@@ -59,13 +60,37 @@ func (r *Repository) CreateUser(ctx context.Context, email string, passHash []by
 func (r *Repository) GetUser(ctx context.Context, email string) (*models.User, error) {
 	const op = "repository.postgres.GetUser"
 
-	panic("not implemented")
+	var user *models.User
+
+	query := fmt.Sprintf("SELECT * FROM %s WHERE email=$1", usersTable)
+
+	if err := r.db.GetContext(ctx, user, query, email); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("%s: %w", op, repository.ErrUserNotFound)
+		}
+
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return user, nil
 }
 
 func (r *Repository) GetApp(ctx context.Context, appID int32) (*models.App, error) {
 	const op = "repository.postgres.GetApp"
 
-	panic("not implemented")
+	var app *models.App
+
+	query := fmt.Sprintf("SELECT * FROM %s WHERE id=$1", appsTable)
+
+	if err := r.db.GetContext(ctx, app, query, appID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("%s: %w", op, repository.ErrAppNotFound)
+		}
+
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return app, nil
 }
 
 func MustConnect(dsn string) *sqlx.DB {
