@@ -8,6 +8,7 @@ import (
 
 	"github.com/TimNikolaev/drag-sso/internal/app"
 	"github.com/TimNikolaev/drag-sso/internal/config"
+	_ "github.com/lib/pq"
 )
 
 const (
@@ -26,7 +27,7 @@ func main() {
 	log.Info("starting application", slog.Any("cfg", cfg))
 
 	// Init app
-	application := app.New(log, cfg.GRPC.Port, cfg.TokenTTL)
+	application := app.New(log, cfg.GRPC.Port, cfg.TokenTTL, cfg.DSN)
 
 	// Run app's gRPC-server
 	go application.GRPCServer.MustRun()

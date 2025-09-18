@@ -2,7 +2,9 @@ package auth
 
 import (
 	"context"
+	"errors"
 
+	"github.com/TimNikolaev/drag-sso/internal/services/auth"
 	ssov1 "github.com/TimNikolaev/grpc-protos/gen/go/sso"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -34,7 +36,10 @@ func (s *serverAPI) SignUp(ctx context.Context, req *ssov1.SignUpRequest) (*ssov
 
 	userID, err := s.auth.SignUpNewUser(ctx, req.GetEmail(), req.GetPassword())
 	if err != nil {
-		//TODO:
+		if errors.Is(err, auth.ErrUserExists) {
+			return nil, status.Error(codes.AlreadyExists, "user already exists")
+		}
+
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 
@@ -48,7 +53,10 @@ func (s *serverAPI) SignIn(ctx context.Context, req *ssov1.SignInRequest) (*ssov
 
 	token, err := s.auth.SignIn(ctx, req.GetEmail(), req.GetPassword(), req.GetAppId())
 	if err != nil {
-		//TODO:
+		if errors.Is(err, auth.ErrInvalidCredentials) {
+			return nil, status.Error(codes.InvalidArgument, "invalid argument")
+		}
+
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 
