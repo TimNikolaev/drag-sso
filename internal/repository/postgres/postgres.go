@@ -16,17 +16,10 @@ type Repository struct {
 	db *sqlx.DB
 }
 
-func New(dsn string) (*Repository, error) {
-	const op = "repository.postgres.New"
-
-	db, err := Connect(dsn)
-	if err != nil {
-		return nil, fmt.Errorf("%s: %w", op, err)
-	}
-
+func New(db *sqlx.DB) *Repository {
 	return &Repository{
 		db: db,
-	}, nil
+	}
 }
 
 const (
@@ -91,28 +84,4 @@ func (r *Repository) GetApp(ctx context.Context, appID int32) (*models.App, erro
 	}
 
 	return app, nil
-}
-
-func MustConnect(dsn string) *sqlx.DB {
-	db, err := Connect(dsn)
-	if err != nil {
-		panic(err)
-	}
-
-	return db
-}
-
-func Connect(dsn string) (*sqlx.DB, error) {
-
-	db, err := sqlx.Open("postgres", dsn)
-	if err != nil {
-		return nil, err
-	}
-
-	err = db.Ping()
-	if err != nil {
-		return nil, err
-	}
-
-	return db, nil
 }

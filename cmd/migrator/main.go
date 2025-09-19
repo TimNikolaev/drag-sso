@@ -6,10 +6,10 @@ import (
 	"fmt"
 
 	"github.com/TimNikolaev/drag-sso/internal/config"
-	postgres_repo "github.com/TimNikolaev/drag-sso/internal/repository/postgres"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 )
 
@@ -29,7 +29,7 @@ func main() {
 		panic("migrations-db is required")
 	}
 
-	db := postgres_repo.MustConnect(cfg.DSN)
+	db := MustDBConnect(cfg.DSN)
 
 	driver, err := postgres.WithInstance(db.DB, &postgres.Config{})
 	if err != nil {
@@ -57,4 +57,28 @@ func main() {
 
 	fmt.Println("migrations applied successfully")
 
+}
+
+func MustDBConnect(dsn string) *sqlx.DB {
+	db, err := DBConnect(dsn)
+	if err != nil {
+		panic(err)
+	}
+
+	return db
+}
+
+func DBConnect(dsn string) (*sqlx.DB, error) {
+
+	db, err := sqlx.Open("postgres", dsn)
+	if err != nil {
+		return nil, err
+	}
+
+	err = db.Ping()
+	if err != nil {
+		return nil, err
+	}
+
+	return db, nil
 }

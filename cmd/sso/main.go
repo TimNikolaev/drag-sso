@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/TimNikolaev/drag-sso/internal/app"
 	"github.com/TimNikolaev/drag-sso/internal/config"
@@ -24,7 +25,9 @@ func main() {
 	// Init logger
 	log := setupLogger(cfg.Env)
 
-	log.Info("starting application", slog.Any("cfg", cfg))
+	if cfg.Env == envLocal {
+		log.Info("starting application", slog.Any("cfg", cfg))
+	}
 
 	// Init app
 	application := app.New(log, cfg.GRPC.Port, cfg.TokenTTL, cfg.DSN)
@@ -41,6 +44,14 @@ func main() {
 	log.Info("graceful stopping", slog.String("signal", signal.String()))
 
 	application.GRPCServer.Stop()
+
+	time.Sleep(2 * time.Second)
+
+	if err := application.PostgresDB.Close(); err != nil {
+		log.Error("error occurred on db connection close", slog.String("err", err.Error()))
+	} else {
+		log.Info("db connection closed successfully")
+	}
 
 	log.Info("graceful stopped")
 
