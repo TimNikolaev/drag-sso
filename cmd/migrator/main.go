@@ -30,6 +30,7 @@ func main() {
 	}
 
 	db := MustDBConnect(cfg.DSN)
+	defer db.Close()
 
 	driver, err := postgres.WithInstance(db.DB, &postgres.Config{})
 	if err != nil {
